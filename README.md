@@ -1,90 +1,47 @@
-# CarND-Controls-PID
-Self-Driving Car Engineer Nanodegree Program
+# PID Controller Project
+[Udacity - Self-Driving Car NanoDegree PID Controller Project]
+(https://github.com/udacity/CarND-PID-Control-Project)
+
 
 ---
 
-## Dependencies
+## Overview
+In this project, the aim is to implement a PID controller in C++. The controller is responsible for calculating the steering angle. In addition, a second controller is responsible for calculating the throttle value.
 
-* cmake >= 3.5
- * All OSes: [click here for installation instructions](https://cmake.org/install/)
-* make >= 4.1
-  * Linux: make is installed by default on most Linux distros
-  * Mac: [install Xcode command line tools to get make](https://developer.apple.com/xcode/features/)
-  * Windows: [Click here for installation instructions](http://gnuwin32.sourceforge.net/packages/make.htm)
-* gcc/g++ >= 5.4
-  * Linux: gcc / g++ is installed by default on most Linux distros
-  * Mac: same deal as make - [install Xcode command line tools]((https://developer.apple.com/xcode/features/)
-  * Windows: recommend using [MinGW](http://www.mingw.org/)
-* [uWebSockets](https://github.com/uWebSockets/uWebSockets)
-  * Run either `./install-mac.sh` or `./install-ubuntu.sh`.
-  * If you install from source, checkout to commit `e94b6e1`, i.e.
-    ```
-    git clone https://github.com/uWebSockets/uWebSockets 
-    cd uWebSockets
-    git checkout e94b6e1
-    ```
-    Some function signatures have changed in v0.14.x. See [this PR](https://github.com/udacity/CarND-MPC-Project/pull/3) for more details.
-* Simulator. You can download these from the [project intro page](https://github.com/udacity/self-driving-car-sim/releases) in the classroom.
+## The Project
+Applied two PID controllers, one for steering, and one for speed. In addition, the target speed is calculated as a function of steering angle and cte. The function has three additional parameters.
 
-## Basic Build Instructions
+Nine parameters in total, implemented twiddle to find the parameters that let the controller drive with the highest mean speed.
 
-1. Clone this repo.
-2. Make a build directory: `mkdir build && cd build`
-3. Compile: `cmake .. && make`
-4. Run it: `./pid`. 
+PID class and Twiddle class are implemented for the PID Controller project.
 
-## Editor Settings
+The PID class has three methods.
+* Init: initializes the PID controller, setting error values to zero.
+* UpdateError: Calculates p_error, d_error, and i_error.
+* TotalError: Calculates the total error value. Either the steering value or the throttle value.
 
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
+The Twiddle class is responsible for applying the twiddle algorithm on the simulator. For each parameter set, it restarts the simulator. There are nine parameters to optimize.
+* Kp, Kd, Ki for steering PID controller
+* Kp, Kd, Ki for speed PID controller
+* Min target speed
+* Speed coefficient
+* cte/steering limit for max speed
 
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
+The target speed was calculated as follows:
+cte_str value was calculated first. It takes the maximum of cte value or the steering value times 10. If the cte_str value was less than the cte/steering limit parameter, then the target speed was set to 100. Otherwise, the target speed was the sum of the min target speed parameter and the product of the speed coefficient and the (4.5 - cte_str) value.
 
-## Code Style
+## Twiddle
+In every run, a parameter was changed by adding the dp * kp value for the parameter. Since, the parameters have different scales, a single dp value for each parameter was not suffice. Kd parameter changed more than the Kp parameter, and the Kp parameter changed more than the Kd parameter.
 
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
+At the end of the run, if the car was able to complete the track, in other words, able to drive for the given size of steps, the mean cte error value and the mean steering value were compared with the lowest error and steering values. If they are both less than the previous best values, the parameters were selected as new best parameters. Only the Kp, Kd and Ki parameters for the steering PID controller were allowed to change by this condition. Since the other parameters may cause slowing the car.
 
-## Project Instructions and Rubric
+In addition, if the car completed the track, and it had a higher mean speed, the parameters were accepted as newly selected parameters.
 
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
+If the car was not able to complete the track, then it was needed to go further steps to select the new parameters.
 
-More information is only accessible by people who are already enrolled in Term 2
-of CarND. If you are enrolled, see [the project page](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/f1820894-8322-4bb3-81aa-b26b3c6dcbaf/lessons/e8235395-22dd-4b87-88e0-d108c5e5bbf4/concepts/6a4d8d42-6a04-4aa6-b284-1697c0fd6562)
-for instructions and the project rubric.
+The twiddle algorithm has run for several times. After each run, the best parameters were set to start with a new run. In addition, it was required to decrease the Kp values to find better parameters. The final values are stored in the Twiddle.cpp file.
 
-## Hints!
 
-* You don't have to follow this directory structure, but if you do, your work
-  will span all of the .cpp files here. Keep an eye out for TODOs.
+Sample project video
 
-## Call for IDE Profiles Pull Requests
-
-Help your fellow students!
-
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to we ensure
-that students don't feel pressured to use one IDE or another.
-
-However! I'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
-
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
-
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
-
-Frankly, I've never been involved in a project with multiple IDE profiles
-before. I believe the best way to handle this would be to keep them out of the
-repo root to avoid clutter. My expectation is that most profiles will include
-instructions to copy files to a new location to get picked up by the IDE, but
-that's just a guess.
-
-One last note here: regardless of the IDE used, every submitted project must
-still be compilable with cmake and make./
+[![PID Controller](http://img.youtube.com/vi/ATfoDwHBfaA/0.jpg)](http://www.youtube.com/watch?v=ATfoDwHBfaA)
